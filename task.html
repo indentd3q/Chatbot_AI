@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Management Dashboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #D4C3A8;
+            --secondary-color: #A68F6F;
+            --background-color: #F5F5F5;
+            --text-color: #1A1A1A;
+            --white: #FFFFFF;
+            --success-color: #2ecc71;
+            --danger-color: #e74c3c;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .task-container {
+            max-width: 800px;
+            margin: 20px auto;
+            background-color: var(--white);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background-color: var(--primary-color);
+            color: var(--text-color);
+        }
+
+        .task-input-container {
+            display: flex;
+            padding: 15px;
+            background-color: var(--background-color);
+        }
+
+        .task-input {
+            flex-grow: 1;
+            padding: 10px;
+            margin-right: 10px;
+            border: 1px solid #D0D0D0;
+            border-radius: 5px;
+        }
+
+        .task-add-btn {
+            padding: 10px 15px;
+            background-color: var(--secondary-color);
+            color: var(--white);
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .task-list {
+            list-style-type: none;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            border-bottom: 1px solid #E0E0E0;
+            transition: background-color 0.3s ease;
+        }
+
+        .task-item:hover {
+            background-color: var(--background-color);
+        }
+
+        .task-content {
+            display: flex;
+            align-items: center;
+            flex-grow: 1;
+        }
+
+        .task-checkbox {
+            margin-right: 15px;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--secondary-color);
+            border-radius: 4px;
+            outline: none;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .task-checkbox:checked {
+            background-color: var(--secondary-color);
+        }
+
+        .task-checkbox:checked::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--white);
+        }
+
+        .task-text {
+            flex-grow: 1;
+            margin-right: 15px;
+        }
+
+        .task-text.completed {
+            text-decoration: line-through;
+            color: #888;
+        }
+
+        .task-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .task-action-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-color);
+            opacity: 0.6;
+            transition: opacity 0.3s ease;
+        }
+
+        .task-action-btn:hover {
+            opacity: 1;
+        }
+
+        .task-action-btn.edit {
+            color: var(--secondary-color);
+        }
+
+        .task-action-btn.delete {
+            color: var(--danger-color);
+        }
+
+        .task-categories {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding: 0 15px;
+        }
+
+        .category-btn {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.8em;
+            transition: background-color 0.3s ease;
+        }
+
+        .category-btn.active {
+            background-color: var(--secondary-color);
+            color: var(--white);
+        }
+
+        .category-btn.work {
+            background-color: rgba(173, 216, 230, 0.2);
+            color: var(--text-color);
+        }
+
+        .category-btn.personal {
+            background-color: rgba(144, 238, 144, 0.2);
+            color: var(--text-color);
+        }
+
+        .category-btn.shopping {
+            background-color: rgba(255, 182, 193, 0.2);
+            color: var(--text-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="task-container">
+        <div class="task-header">
+            <h2>Task Management</h2>
+            <div>
+                <button class="category-btn work" data-category="work">Work</button>
+                <button class="category-btn personal" data-category="personal">Personal</button>
+                <button class="category-btn shopping" data-category="shopping">Shopping</button>
+            </div>
+        </div>
+
+        <div class="task-input-container">
+            <input type="text" id="task-input" class="task-input" placeholder="Enter a new task...">
+            <select id="task-category" class="task-input" style="width: 150px; margin-right: 10px;">
+                <option value="work">Work</option>
+                <option value="personal">Personal</option>
+                <option value="shopping">Shopping</option>
+            </select>
+            <button class="task-add-btn" onclick="addTask()">Add Task</button>
+        </div>
+
+        <ul id="task-list" class="task-list">
+            <!-- Tasks will be dynamically added here -->
+        </ul>
+    </div>
+
+    <script>
+        let tasks = [];
+        let currentFilter = 'all';
+
+        function addTask() {
+            const taskInput = document.getElementById('task-input');
+            const categorySelect = document.getElementById('task-category');
+            
+            const taskText = taskInput.value.trim();
+            const category = categorySelect.value;
+
+            if (taskText) {
+                const newTask = {
+                    id: Date.now(),
+                    text: taskText,
+                    completed: false,
+                    category: category
+                };
+
+                tasks.push(newTask);
+                taskInput.value = '';
+                renderTasks();
+            }
+        }
+
+        function renderTasks() {
+            const taskList = document.getElementById('task-list');
+            taskList.innerHTML = '';
+
+            const filteredTasks = currentFilter === 'all' 
+                ? tasks 
+                : tasks.filter(task => task.category === currentFilter);
+
+            filteredTasks.forEach(task => {
+                const taskItem = document.createElement('li');
+                taskItem.classList.add('task-item');
+                
+                taskItem.innerHTML = `
+                    <div class="task-content">
+                        <input 
+                            type="checkbox" 
+                            class="task-checkbox" 
+                            ${task.completed ? 'checked' : ''}
+                            onchange="toggleTaskCompletion(${task.id})"
+                        >
+                        <span class="task-text ${task.completed ? 'completed' : ''}">${task.text}</span>
+                    </div>
+                    <div class="task-actions">
+                        <button class="task-action-btn edit" onclick="editTask(${task.id})">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="task-action-btn delete" onclick="deleteTask(${task.id})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+
+                taskList.appendChild(taskItem);
+            });
+        }
+
+        function toggleTaskCompletion(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (task) {
+                task.completed = !task.completed;
+                renderTasks();
+            }
+        }
+
+        function deleteTask(taskId) {
+            tasks = tasks.filter(task => task.id !== taskId);
+            renderTasks();
+        }
+
+        function editTask(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (task) {
+                const newText = prompt('Edit task:', task.text);
+                if (newText !== null && newText.trim() !== '') {
+                    task.text = newText.trim();
+                    renderTasks();
+                }
+            }
+        }
+
+        // Category filtering
+        document.querySelectorAll('.category-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Remove active class from all buttons
+                document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+                
+                // Add active class to clicked button
+                this.classList.add('active');
+                
+                // Set current filter
+                currentFilter = this.dataset.category;
+                renderTasks();
+            });
+        });
+
+        // Initial render
+        renderTasks();
+    </script>
+</body>
+</html>
